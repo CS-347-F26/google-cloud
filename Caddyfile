@@ -1,0 +1,26 @@
+# /srv/apps/Caddyfile
+#
+# One block per app. Caddy obtains a Let's Encrypt certificate for each
+# hostname automatically on first request, and renews it forever. There is no
+# certbot, no cron job, no renewal logic to teach or to forget.
+#
+# Hostnames come from .env so that this file is identical for every student and
+# .env stays the single place anything is configured.
+
+{
+	email {$ACME_EMAIL}
+}
+
+{$LOCALLIBRARY_HOST} {
+	reverse_proxy locallibrary:8000
+}
+
+# reverse_proxy detects and forwards WebSocket upgrades on its own — the
+# Channels app needs no extra configuration here.
+{$CHAT_HOST} {
+	reverse_proxy chat:8000
+}
+
+{$APP3_HOST} {
+	reverse_proxy app3:8000
+}

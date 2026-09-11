@@ -1,0 +1,9 @@
+# The real environment file holds the Postgres password, the Django SECRET_KEY,
+# and the student's own hostnames. env.example is the one that gets committed.
+.env
+
+# Caddy and Postgres keep their state in named Docker volumes, but just in case
+# anyone runs something that drops them here:
+caddy_data/
+pg_data/
+*.sql.bak
