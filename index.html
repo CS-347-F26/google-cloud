@@ -89,6 +89,8 @@ body {
 }
 a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
 a:hover { color: var(--accent-hover); }
+code a { color: inherit; text-decoration: underline; text-decoration-style: dotted; }
+code a:hover { color: var(--accent-hover); text-decoration-style: solid; }
 
 /* Config bar */
 .config-bar {
@@ -344,7 +346,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])</code></pre>
 <p>Without this line, you will get CSRF errors on login and redirect loops if <code>SECURE_SSL_REDIRECT</code> is on.</p>
 
 <h3>Add a Dockerfile</h3>
-<p>Copy <code>Dockerfile.example</code> into each app&rsquo;s repo as <code>Dockerfile</code>. The only line you need to change is the last one &mdash; replace the module name with your app&rsquo;s WSGI or ASGI module.</p>
+<p>Copy <code><a href="Dockerfile.example" download>Dockerfile.example</a></code> into each app&rsquo;s repo as <code>Dockerfile</code>. The only line you need to change is the last one &mdash; replace the module name with your app&rsquo;s WSGI or ASGI module.</p>
 
 <p>For <strong>locallibrary</strong> (which uses Daphne for Channels):</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>CMD ["sh", "-c", "python manage.py migrate --noinput &amp;&amp; exec daphne -b 0.0.0.0 -p 8000 locallibrary_config.asgi:application"]</code></pre></div>
@@ -372,7 +374,7 @@ gcloud config set project <span data-v="project" data-d="cs347f26-YOUR_EID">cs34
 <p>Copy the account ID (format <code>XXXXXX-XXXXXX-XXXXXX</code>) and <strong>enter it in the &ldquo;Billing Account ID&rdquo; field above</strong>, then link it to your project (you probably want the one whose name is <code>Billing Account for Education</code>):</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud billing projects link <span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span> --billing-account=<span data-v="billing" data-d="BILLING_ACCOUNT_ID">BILLING_ACCOUNT_ID</span></code></pre></div>
 
-<h2>2. Create your VM</h2>
+<h2>3. Create your VM</h2>
 <p>Clone this repository and run the setup script with your JMU eID:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>git clone https://github.com/CS-347-F26/google-cloud.git
 cd google-cloud
@@ -384,7 +386,7 @@ cd google-cloud
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c \
   --command 'sudo journalctl -u google-startup-scripts -f'</code></pre></div>
 
-<h2>3. Set up DNS</h2>
+<h2>4. Set up DNS</h2>
 <p>At your domain registrar, add <strong>one</strong> wildcard A record:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>*.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span>    A    <span data-v="ip" data-d="YOUR_STATIC_IP">YOUR_STATIC_IP</span></code></pre></div>
 
@@ -395,7 +397,7 @@ cd google-cloud
 
 <p>You should see your static IP. If it returns nothing, wait a few minutes and try again. <strong>Do not start the containers until DNS is working</strong> &mdash; Caddy requests a TLS certificate on first contact with each hostname, and that fails if DNS is not live yet.</p>
 
-<h2>4. SSH into your VM</h2>
+<h2>5. SSH into your VM</h2>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c</code></pre></div>
 
 <p>The first time you log in, the VM adds you to the <code>docker</code> group. <strong>Log out and back in once</strong> for that to take effect:</p>
@@ -444,9 +446,9 @@ CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 
 <p>FYI: The key at <code>~/.ssh/google_compute_engine</code> was created by your first <code>gcloud compute ssh</code>.</p>
 
-<h2>5. Clone the deployment files and your apps</h2>
-<p>Copy the deployment files (<code>Dockerfile.example</code>, <code>docker-compose.yml</code>,<code>Caddyfile</code>, <code>init-databases.sql</code>,
-<code>env.example</code>) into <code>/srv/apps/</code>. By running the following form your laptop:</p>
+<h2>6. Clone the deployment files and your apps</h2>
+<p>Copy the deployment files (<code><a href="Dockerfile.example" download>Dockerfile.example</a></code>, <code><a href="docker-compose.yml" download>docker-compose.yml</a></code>, <code><a href="Caddyfile" download>Caddyfile</a></code>, <code><a href="init-databases.sql" download>init-databases.sql</a></code>,
+<code><a href="env.example" download>env.example</a></code>) into <code>/srv/apps/</code>. By running the following form your laptop:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>scp Dockerfile.example docker-compose.yml Caddyfile init-databases.sql env.example <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>:/srv/apps</code></pre></div>
 
 <p>Next ssh to the server and move to the directory where you just put those files</p>
@@ -462,16 +464,16 @@ git clone YOUR_KAHDUKE_REPO kahduke</code></pre></div>
 <div class="tree">
 /srv/apps/<br>
 &nbsp;&nbsp;.env <span class="muted">&larr; you create this next</span><br>
-&nbsp;&nbsp;Caddyfile<br>
-&nbsp;&nbsp;Dockerfile.example<br>
-&nbsp;&nbsp;docker-compose.yml<br>
-&nbsp;&nbsp;env.example<br>
-&nbsp;&nbsp;init-databases.sql<br>
+&nbsp;&nbsp;<a href="Caddyfile" download>Caddyfile</a><br>
+&nbsp;&nbsp;<a href="Dockerfile.example" download>Dockerfile.example</a><br>
+&nbsp;&nbsp;<a href="docker-compose.yml" download>docker-compose.yml</a><br>
+&nbsp;&nbsp;<a href="env.example" download>env.example</a><br>
+&nbsp;&nbsp;<a href="init-databases.sql" download>init-databases.sql</a><br>
 &nbsp;&nbsp;kahduke/ <span class="muted">&larr; your app repo</span><br>
 &nbsp;&nbsp;locallibrary/ <span class="muted">&larr; your app repo</span><br>
 </div>
 
-<h2>6. Configure your environment</h2>
+<h2>7. Configure your environment</h2>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>cp env.example .env
 nano .env</code></pre></div>
 
@@ -492,7 +494,7 @@ nano .env</code></pre></div>
 
 <p><strong>Do not</strong> set <code>DATABASE_URL</code> in <code>.env</code>. Leaving it unset is what makes SQLite work on your laptop.</p>
 
-<h2>7. Start everything</h2>
+<h2>8. Start everything</h2>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose up -d --build</code></pre></div>
 
 <p>This builds your app images, starts Postgres, runs your migrations, and starts Caddy. On first launch it takes a few minutes because it is downloading base images and building from scratch.</p>
@@ -519,10 +521,10 @@ docker compose up -d --build locallibrary</code></pre></div>
 <h2>Adding a fourth app</h2>
 <p>Four things, in order:</p>
 <ol>
-  <li><strong>docker-compose.yml</strong> &mdash; add a service stanza (copy the <code>final_project</code> block, change the name and build path)</li>
-  <li><strong>Caddyfile</strong> &mdash; add a <code>{$APP4_HOST}</code> block</li>
+  <li><strong><a href="docker-compose.yml">docker-compose.yml</a></strong> &mdash; add a service stanza (copy the <code>final_project</code> block, change the name and build path)</li>
+  <li><strong><a href="Caddyfile">Caddyfile</a></strong> &mdash; add a <code>{$APP4_HOST}</code> block</li>
   <li><strong>.env</strong> &mdash; add <code>APP4_HOST=app4.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span></code></li>
-  <li><strong>Create the database</strong> &mdash; the <code>init-databases.sql</code> file only runs on the very first Postgres start, so create it by hand:</li>
+  <li><strong>Create the database</strong> &mdash; the <code><a href="init-databases.sql">init-databases.sql</a></code> file only runs on the very first Postgres start, so create it by hand:</li>
 </ol>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose exec postgres createdb -U cs347 app4</code></pre></div>
 <p>Then <code>docker compose up -d --build</code>.</p>
