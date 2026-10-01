@@ -13,7 +13,7 @@ ENV PYTHONUNBUFFERED=1 \
 # --locked fails loudly if uv.lock disagrees with pyproject.toml, which is what
 # you want on a server: install what you tested, or stop.
 COPY pyproject.toml uv.lock ./
-RUN uv sync --locked --no-dev
+RUN uv sync --locked --no-dev --group prod
 
 COPY . .
 

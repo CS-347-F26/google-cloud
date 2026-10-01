@@ -39,12 +39,11 @@ students would meet at a real job.
 `settings-snippet.py` is the whole change:
 
 ```python
+import environ
+env = environ.Env()
+
 DATABASES = {
-    "default": dj_database_url.config(
-        default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}",
-        conn_max_age=600,
-        conn_health_checks=True,
-    )
+    "default": env.db(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }
 ```
 
@@ -52,9 +51,9 @@ No `DATABASE_URL` in the environment means SQLite, so a laptop needs no configur
 clone just runs. Compose sets `DATABASE_URL` per service, so the deployed copy is Postgres. `.env`
 deliberately does **not** define `DATABASE_URL` — that absence is what makes the fallback work.
 
-`dj-database-url` is already in the Part 11 dependency list, so this introduces nothing new to the
-tutorial. (Part 11 lists `psycopg2-binary`; `psycopg[binary]` is the current driver. Either works — pick
-one and keep the whole class on it.)
+`django-environ` is a regular dependency (students use it locally too). `psycopg[binary]` and `gunicorn`
+live in a `prod` dependency group in `pyproject.toml`, so `uv sync` on a laptop never installs them. The Dockerfile runs
+`uv sync --locked --no-dev --group prod` to pull them in at build time.
 
 ## Sizing: 30 students, and where e2-micro runs out
 

@@ -60,12 +60,6 @@ services:
     build: ./locallibrary
     environment:
       DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/locallibrary
-
-  chat:
-    <<: *django
-    build: ./chat
-    environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/chat
       REDIS_URL: redis://redis:6379
     # A YAML merge key does not combine mappings, it replaces them — so this
     # depends_on must repeat the postgres condition from the anchor above.
@@ -75,11 +69,17 @@ services:
       redis:
         condition: service_started
 
-  app3:
+  kahduke:
     <<: *django
-    build: ./app3
+    build: ./kahduke
     environment:
-      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/app3
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/kahduke
+
+  final_project:
+    <<: *django
+    build: ./final_project
+    environment:
+      DATABASE_URL: postgres://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/final_project
 
   # Shared by any app that needs a channel layer or a cache.
   # One Redis for all of them — there is no reason to run three.

@@ -10,5 +10,5 @@
 -- lose an afternoon.)
 
 CREATE DATABASE locallibrary;
-CREATE DATABASE chat;
-CREATE DATABASE app3;
+CREATE DATABASE kahduke;
+CREATE DATABASE final_project;

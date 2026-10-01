@@ -11,16 +11,16 @@
 	email {$ACME_EMAIL}
 }
 
+# reverse_proxy detects and forwards WebSocket upgrades on its own — the
+# Channels chat inside locallibrary needs no extra configuration here.
 {$LOCALLIBRARY_HOST} {
 	reverse_proxy locallibrary:8000
 }
 
-# reverse_proxy detects and forwards WebSocket upgrades on its own — the
-# Channels app needs no extra configuration here.
-{$CHAT_HOST} {
-	reverse_proxy chat:8000
+{$KAHDUKE_HOST} {
+	reverse_proxy kahduke:8000
 }
 
-{$APP3_HOST} {
-	reverse_proxy app3:8000
+{$FINAL_PROJECT_HOST} {
+	reverse_proxy final_project:8000
 }

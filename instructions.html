@@ -1,0 +1,636 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Deploy Instructions</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;700&family=DM+Mono:wght@400;500&display=swap">
+<style>
+/* Layout: sticky config bar + single-column prose, 42em max */
+/* Palette: JMU Purple #450084, Teal #009896, Ice Blue #8EE4D7, Light Gold #F4EFE1, Slate Gray #333 */
+:root {
+  --bg: #faf8f2;
+  --fg: #333333;
+  --fg-muted: #6b6860;
+  --accent: #450084;
+  --accent-hover: #5c10a8;
+  --code-bg: #eeeade;
+  --code-border: #e0dcd0;
+  --config-bg: #f4efe1;
+  --config-border: #ddd8c8;
+  --border: #dddad0;
+  --table-stripe: #f2efe6;
+  --placeholder-bg: #fef6e4;
+  --placeholder-fg: #8a6510;
+  --filled-bg: #ddf4f2;
+  --filled-fg: #007572;
+  --note-bg: #e4f6f4;
+  --note-border: #009896;
+  --note-fg: #006e6c;
+  --font-heading: 'DM Sans', system-ui, -apple-system, sans-serif;
+  --font-body: system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif;
+  --font-mono: 'DM Mono', ui-monospace, 'Menlo', 'Consolas', monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #1c1b20;
+    --fg: #e3e1db;
+    --fg-muted: #908d85;
+    --accent: #b888e8;
+    --accent-hover: #cca0f0;
+    --code-bg: #27262c;
+    --code-border: #3b3a40;
+    --config-bg: #232228;
+    --config-border: #3b3a40;
+    --border: #3b3a40;
+    --table-stripe: #212026;
+    --placeholder-bg: #342c18;
+    --placeholder-fg: #d4a840;
+    --filled-bg: #152e2d;
+    --filled-fg: #50c8c4;
+    --note-bg: #152e2d;
+    --note-border: #30807e;
+    --note-fg: #60d0cc;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #1c1b20;
+  --fg: #e3e1db;
+  --fg-muted: #908d85;
+  --accent: #b888e8;
+  --accent-hover: #cca0f0;
+  --code-bg: #27262c;
+  --code-border: #3b3a40;
+  --config-bg: #232228;
+  --config-border: #3b3a40;
+  --border: #3b3a40;
+  --table-stripe: #212026;
+  --placeholder-bg: #342c18;
+  --placeholder-fg: #d4a840;
+  --filled-bg: #152e2d;
+  --filled-fg: #50c8c4;
+  --note-bg: #152e2d;
+  --note-border: #30807e;
+  --note-fg: #60d0cc;
+  color-scheme: dark;
+}
+
+*, *::before, *::after { box-sizing: border-box; }
+body {
+  margin: 0;
+  padding-inline: 16px;
+  padding-block: 0;
+  background: var(--bg);
+  color: var(--fg);
+  font-family: var(--font-body);
+  font-size: 15px;
+  line-height: 1.65;
+}
+a { color: var(--accent); text-decoration-thickness: 1px; text-underline-offset: 2px; }
+a:hover { color: var(--accent-hover); }
+
+/* Config bar */
+.config-bar {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: var(--config-bg);
+  border-bottom: 1px solid var(--config-border);
+  padding: 10px 16px;
+  margin-inline: -16px;
+}
+.config-inner {
+  max-width: 50em;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 8px;
+}
+.config-field label {
+  display: block;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 500;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--fg-muted);
+  margin-bottom: 2px;
+}
+.config-field input {
+  width: 100%;
+  padding: 5px 8px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  background: var(--bg);
+  color: var(--fg);
+}
+.config-field input::placeholder { color: var(--fg-muted); opacity: 0.6; }
+.config-field input:focus { outline: 2px solid var(--accent); outline-offset: -1px; border-color: transparent; }
+
+/* Main content */
+main {
+  max-width: 42em;
+  margin: 0 auto;
+  padding-block: 2em 4em;
+}
+h1 {
+  font-family: var(--font-heading);
+  font-size: 1.75em;
+  font-weight: 700;
+  line-height: 1.25;
+  margin: 0 0 0.3em;
+  text-wrap: balance;
+}
+h2 {
+  font-family: var(--font-heading);
+  font-size: 1.25em;
+  font-weight: 700;
+  line-height: 1.3;
+  margin: 2.5em 0 0.6em;
+  padding-bottom: 0.3em;
+  border-bottom: 1px solid var(--border);
+  text-wrap: balance;
+}
+h2:first-of-type { margin-top: 1.5em; }
+h3 {
+  font-family: var(--font-heading);
+  font-size: 1em;
+  font-weight: 700;
+  margin: 1.8em 0 0.4em;
+}
+p { margin: 0.6em 0; }
+.lead { color: var(--fg-muted); font-size: 1.05em; line-height: 1.6; margin-bottom: 1.5em; }
+ul, ol { padding-left: 1.5em; margin: 0.6em 0; }
+li { margin: 0.3em 0; }
+strong { font-weight: 600; }
+
+/* Code blocks */
+.code-block {
+  position: relative;
+  margin: 0.8em 0;
+}
+pre {
+  margin: 0;
+  padding: 14px 16px;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 6px;
+  overflow-x: auto;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.55;
+}
+code {
+  font-family: var(--font-mono);
+  font-size: 0.88em;
+}
+p code, li code, td code {
+  background: var(--code-bg);
+  padding: 1px 5px;
+  border-radius: 3px;
+  font-size: 0.85em;
+}
+pre code { background: none; padding: 0; font-size: inherit; border-radius: 0; }
+.copy-btn {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  padding: 3px 8px;
+  font-family: var(--font-heading);
+  font-size: 11px;
+  font-weight: 500;
+  background: var(--bg);
+  color: var(--fg-muted);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.15s;
+}
+.code-block:hover .copy-btn { opacity: 1; }
+.copy-btn:hover { color: var(--fg); }
+
+/* Placeholder spans */
+[data-v] {
+  padding: 0 3px;
+  border-radius: 3px;
+  background: var(--placeholder-bg);
+  color: var(--placeholder-fg);
+  font-family: var(--font-mono);
+  font-size: 0.92em;
+  white-space: nowrap;
+}
+[data-v].filled {
+  background: var(--filled-bg);
+  color: var(--filled-fg);
+}
+pre [data-v] { font-family: inherit; font-size: inherit; padding: 0 2px; }
+
+/* Tables */
+table { width: 100%; border-collapse: collapse; margin: 0.8em 0; font-size: 0.92em; }
+th, td { padding: 8px 12px; text-align: left; border-bottom: 1px solid var(--border); }
+th { font-family: var(--font-heading); font-weight: 600; font-size: 0.85em; text-transform: uppercase; letter-spacing: 0.03em; color: var(--fg-muted); }
+tr:nth-child(even) td { background: var(--table-stripe); }
+td code { font-size: 0.9em; }
+@media (max-width: 600px) {
+  table { display: block; overflow-x: auto; }
+}
+
+/* Notes */
+.note {
+  margin: 1em 0;
+  padding: 10px 14px;
+  background: var(--note-bg);
+  border-left: 3px solid var(--note-border);
+  border-radius: 0 4px 4px 0;
+  color: var(--note-fg);
+  font-size: 0.93em;
+}
+.note strong { color: inherit; }
+
+/* Directory listing */
+.tree {
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.7;
+  background: var(--code-bg);
+  border: 1px solid var(--code-border);
+  border-radius: 6px;
+  padding: 14px 16px;
+  margin: 0.8em 0;
+}
+.tree .muted { color: var(--fg-muted); }
+
+@media (max-width: 500px) {
+  .config-inner { grid-template-columns: 1fr 1fr; }
+  h1 { font-size: 1.4em; }
+  h2 { font-size: 1.1em; }
+}
+</style>
+</head>
+<body>
+
+<header class="config-bar">
+  <div class="config-inner">
+    <div class="config-field">
+      <label for="f-eid">JMU eID</label>
+      <input id="f-eid" data-field="eid" placeholder="e.g. stewarmc">
+    </div>
+    <div class="config-field">
+      <label for="f-domain">Domain</label>
+      <input id="f-domain" data-field="domain" placeholder="e.g. stewarmc.dev">
+    </div>
+    <div class="config-field">
+      <label for="f-ip">Static IP</label>
+      <input id="f-ip" data-field="ip" placeholder="from step 2">
+    </div>
+    <div class="config-field">
+      <label for="f-billing">Billing Account ID</label>
+      <input id="f-billing" data-field="billing" placeholder="XXXXXX-XXXXXX-XXXXXX">
+    </div>
+    <div class="config-field">
+      <label for="f-osuser">OS Login Username</label>
+      <input id="f-osuser" data-field="osuser" placeholder="from step 4">
+    </div>
+  </div>
+</header>
+
+<main>
+
+<h1>Deploying Your Django Apps to Google Cloud</h1>
+<p class="lead">Your VM runs one Postgres database, one reverse proxy (Caddy), and up to five Django apps &mdash; each on its own subdomain with automatic HTTPS. You develop with SQLite on your laptop and deploy with <code>git push</code> + one command.</p>
+
+<h2>Prerequisites</h2>
+<ul>
+  <li>A Google Cloud account with access to a billing account</li>
+  <li>The <code>gcloud</code> CLI installed, or use <a href="https://shell.cloud.google.com" target="_blank" rel="noopener">Cloud Shell</a></li>
+  <li>A domain name (as created earlier in the semester for free via the GitHub Student Developer Pack)</li>
+  <li>Your Django app(s) pushed to a Git repo you can clone on the VM</li>
+</ul>
+
+<div class="note"><strong>Before you begin:</strong> Enter your <strong>JMU eID</strong> and <strong>domain name</strong> in the fields at the top of this page. The commands throughout will update with your values so you can copy and paste them directly.</div>
+
+<h2>1. Prepare your apps for deployment</h2>
+<p>Do this on your laptop, in each app&rsquo;s repo, <strong>before</strong> touching Google Cloud.</p>
+
+<h3>Add production dependencies</h3>
+<p>Production needs a Postgres driver and a WSGI server that your laptop doesn&rsquo;t. Put them in a <code>prod</code> dependency group so they only install inside the Docker image:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod "psycopg[binary]" gunicorn</code></pre></div>
+
+<p>For <strong>locallibrary</strong> (which includes Channels for chat), also add Daphne:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod daphne</code></pre></div>
+
+<h3>Update settings.py</h3>
+<p>In each app&rsquo;s <code>settings.py</code>, replace the <code>DATABASES</code> dict and add the environment helpers. Near the top of the file, after the existing imports:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>import environ
+
+env = environ.Env()
+
+DATABASES = {
+    "default": env.db(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
+}</code></pre></div>
+
+<p>This gives you SQLite on your laptop (no setup, no Postgres install) and Postgres on the server (configured automatically by Docker Compose via the <code>DATABASE_URL</code> environment variable).</p>
+
+<p>Also replace <code>ALLOWED_HOSTS</code> and <code>CSRF_TRUSTED_ORIGINS</code>:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>ALLOWED_HOSTS = env.list("ALLOWED_HOSTS", default=["localhost", "127.0.0.1"])
+CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])</code></pre></div>
+
+<p>Finally, add the proxy header so Django knows requests arrive over HTTPS:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")</code></pre></div>
+<p>Without this line, you will get CSRF errors on login and redirect loops if <code>SECURE_SSL_REDIRECT</code> is on.</p>
+
+<h3>Add a Dockerfile</h3>
+<p>Copy <code>Dockerfile.example</code> into each app&rsquo;s repo as <code>Dockerfile</code>. The only line you need to change is the last one &mdash; replace the module name with your app&rsquo;s WSGI or ASGI module.</p>
+
+<p>For <strong>locallibrary</strong> (which uses Daphne for Channels):</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>CMD ["sh", "-c", "python manage.py migrate --noinput &amp;&amp; exec daphne -b 0.0.0.0 -p 8000 locallibrary_config.asgi:application"]</code></pre></div>
+
+<p>For <strong>kahduke</strong> and other apps without Channels:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>CMD ["sh", "-c", "python manage.py migrate --noinput &amp;&amp; exec gunicorn --bind 0.0.0.0:8000 --workers 1 --threads 4 YOUR_APP.wsgi"]</code></pre></div>
+
+<h3>Commit and push</h3>
+<p>Make sure everything still works locally (<code>uv run python manage.py runserver</code>), then commit and push:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>git add pyproject.toml uv.lock Dockerfile settings.py
+git commit -m "Add production config for Google Cloud deployment"
+git push</code></pre></div>
+
+<p>Repeat for each app. From here on, everything happens in Google Cloud.</p>
+
+<h2>2. Create your Google Cloud project</h2>
+<p>Authenticate and create a project. Use <code><span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span></code> as the project ID:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud auth login
+gcloud projects create <span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span> --name="CS 347 - <span data-v="eid" data-d="YOUR_EID">YOUR_EID</span>"
+gcloud config set project <span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span></code></pre></div>
+
+<p>Then link your billing account so you can enable Compute Engine. List your billing accounts to find the ID:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud billing accounts list</code></pre></div>
+
+<p>Copy the account ID (format <code>XXXXXX-XXXXXX-XXXXXX</code>) and <strong>enter it in the &ldquo;Billing Account ID&rdquo; field above</strong>, then link it to your project (you probably want the one whose name is <code>Billing Account for Education</code>):</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud billing projects link <span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span> --billing-account=<span data-v="billing" data-d="BILLING_ACCOUNT_ID">BILLING_ACCOUNT_ID</span></code></pre></div>
+
+<h2>2. Create your VM</h2>
+<p>Clone this repository and run the setup script with your JMU eID:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>git clone https://github.com/CS-347-F26/google-cloud.git
+cd google-cloud
+./create-vm.sh <span data-v="eid" data-d="YOUR_EID">YOUR_EID</span></code></pre></div>
+
+<p>The script creates a static IP address, opens ports 80 and 443, and launches a Debian VM that installs Docker automatically on first boot. It prints your static IP when it finishes &mdash; <strong>enter it in the &ldquo;Static IP&rdquo; field above</strong>. The DNS and SSH commands below will update with your IP.</p>
+
+<p>Wait about 60 seconds for the startup script to finish installing Docker. You can watch it:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c \
+  --command 'sudo journalctl -u google-startup-scripts -f'</code></pre></div>
+
+<h2>3. Set up DNS</h2>
+<p>At your domain registrar, add <strong>one</strong> wildcard A record:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>*.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span>    A    <span data-v="ip" data-d="YOUR_STATIC_IP">YOUR_STATIC_IP</span></code></pre></div>
+
+<div class="note"><strong>Important:</strong> The IP address from step 2 should <strong>not</strong> start with <code>10.</code> &mdash; that is an internal IP. Use the external IP that the script printed.</div>
+
+<p>This single record covers every app you will ever add. Verify it resolves before continuing:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>dig +short library.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span></code></pre></div>
+
+<p>You should see your static IP. If it returns nothing, wait a few minutes and try again. <strong>Do not start the containers until DNS is working</strong> &mdash; Caddy requests a TLS certificate on first contact with each hostname, and that fails if DNS is not live yet.</p>
+
+<h2>4. SSH into your VM</h2>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c</code></pre></div>
+
+<p>The first time you log in, the VM adds you to the <code>docker</code> group. <strong>Log out and back in once</strong> for that to take effect:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>exit
+gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c</code></pre></div>
+
+<p>Verify Docker works without <code>sudo</code>:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker ps</code></pre></div>
+
+<p>You should see something like:</p>
+<pre>
+CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
+</pre>
+
+<h3>Set up SSH config for direct access</h3>
+<p><code>gcloud compute ssh</code> works, but you can also configure plain <code>ssh</code>, <code>scp</code>, and <code>rsync</code> to connect directly. First, find your OS Login username:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute os-login describe-profile --format='value(posixAccounts[0].username)'</code></pre></div>
+
+<p>It will look something like <code>stewarmc_jmu_edu</code>. <strong>Paste it into the &ldquo;OS Login Username&rdquo; field above.</strong></p>
+
+<p>Add an entry to <code>~/.ssh/config</code> on your laptop:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>Host <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>
+    HostName <span data-v="ip" data-d="YOUR_STATIC_IP">YOUR_STATIC_IP</span>
+    User <span data-v="osuser" data-d="YOUR_OS_LOGIN_USERNAME">YOUR_OS_LOGIN_USERNAME</span>
+    IdentityFile ~/.ssh/google_compute_engine</code></pre></div>
+
+<p>Now you can use standard tools from your laptop, e.g.:
+  <ul>
+    <li>Get an interactive terminal:
+      <div class="code-block"><button class="copy-btn">Copy</button><pre><code>ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span></code></pre></div>
+    </li>
+    <li>
+      Copy files to the VM:
+      <div class="code-block"><button class="copy-btn">Copy</button>
+        <pre><code>scp WHATEVER_FILES <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>:/whatever/path/</code></pre>
+      </div>
+    </li>
+    <li>
+      Or sync an app directory:
+      <div class="code-block"><button class="copy-btn">Copy</button>
+        <pre><code>rsync -av WHATEVER_DIR/ <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>:/WHATEVER_REMOTE_DIR/</code></pre>
+      </div>
+    </li>
+  </ul>
+</p>
+
+<p>FYI: The key at <code>~/.ssh/google_compute_engine</code> was created by your first <code>gcloud compute ssh</code>.</p>
+
+<h2>5. Clone the deployment files and your apps</h2>
+<p>Copy the deployment files (<code>Dockerfile.example</code>, <code>docker-compose.yml</code>,<code>Caddyfile</code>, <code>init-databases.sql</code>,
+<code>env.example</code>) into <code>/srv/apps/</code>. By running the following form your laptop:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>scp Dockerfile.example docker-compose.yml Caddyfile init-databases.sql env.example <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>:/srv/apps</code></pre></div>
+
+<p>Next ssh to the server and move to the directory where you just put those files</p>
+<div class="code-block"><button class="copy-btn">Copy</button>
+  <pre><code>ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>
+cd /srv/apps</code></pre></div>
+
+<p>Then clone your Django apps beside them:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>git clone YOUR_LOCALLIBRARY_REPO locallibrary
+git clone YOUR_KAHDUKE_REPO kahduke</code></pre></div>
+
+<p>Your <code>/srv/apps/</code> directory should look like this:</p>
+<div class="tree">
+/srv/apps/<br>
+&nbsp;&nbsp;.env <span class="muted">&larr; you create this next</span><br>
+&nbsp;&nbsp;Caddyfile<br>
+&nbsp;&nbsp;Dockerfile.example<br>
+&nbsp;&nbsp;docker-compose.yml<br>
+&nbsp;&nbsp;env.example<br>
+&nbsp;&nbsp;init-databases.sql<br>
+&nbsp;&nbsp;kahduke/ <span class="muted">&larr; your app repo</span><br>
+&nbsp;&nbsp;locallibrary/ <span class="muted">&larr; your app repo</span><br>
+</div>
+
+<h2>6. Configure your environment</h2>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>cp env.example .env
+nano .env</code></pre></div>
+
+<p>Fill in your values:</p>
+<table>
+  <thead><tr><th>Variable</th><th>What to put</th></tr></thead>
+  <tbody>
+    <tr><td><code>SECRET_KEY</code></td><td>A long random string (run <code>python3 -c "import secrets; print(secrets.token_urlsafe(50))"</code>)</td></tr>
+    <tr><td><code>ACME_EMAIL</code></td><td>Your email (for Let&rsquo;s Encrypt expiry warnings)</td></tr>
+    <tr><td><code>LOCALLIBRARY_HOST</code></td><td><code><span data-v="lib-host" data-d="library.yourdomain.dev">library.yourdomain.dev</span></code></td></tr>
+    <tr><td><code>KAHDUKE_HOST</code></td><td><code><span data-v="kahduke-host" data-d="kahduke.yourdomain.dev">kahduke.yourdomain.dev</span></code></td></tr>
+    <tr><td><code>FINAL_PROJECT_HOST</code></td><td><code><span data-v="fp-host" data-d="finalproject.yourdomain.dev">finalproject.yourdomain.dev</span></code></td></tr>
+    <tr><td><code>ALLOWED_HOSTS</code></td><td><code><span data-v="dot-domain" data-d=".yourdomain.dev">.yourdomain.dev</span></code></td></tr>
+    <tr><td><code>CSRF_TRUSTED_ORIGINS</code></td><td><code><span data-v="csrf" data-d="https://*.yourdomain.dev">https://*.yourdomain.dev</span></code></td></tr>
+    <tr><td><code>POSTGRES_PASSWORD</code></td><td>A strong password (only used internally between containers)</td></tr>
+  </tbody>
+</table>
+
+<p><strong>Do not</strong> set <code>DATABASE_URL</code> in <code>.env</code>. Leaving it unset is what makes SQLite work on your laptop.</p>
+
+<h2>7. Start everything</h2>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose up -d --build</code></pre></div>
+
+<p>This builds your app images, starts Postgres, runs your migrations, and starts Caddy. On first launch it takes a few minutes because it is downloading base images and building from scratch.</p>
+
+<p>Check that everything is running:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose ps
+docker compose logs -f</code></pre></div>
+
+<p>Once Caddy has obtained certificates (you will see log lines about it), visit your apps:</p>
+<ul>
+  <li><code>https://<span data-v="lib-host" data-d="library.yourdomain.dev">library.yourdomain.dev</span></code></li>
+  <li><code>https://<span data-v="kahduke-host" data-d="kahduke.yourdomain.dev">kahduke.yourdomain.dev</span></code></li>
+</ul>
+
+<h2>Deploying updates</h2>
+<p>After pushing changes to your app&rsquo;s repo:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c
+cd /srv/apps
+git -C locallibrary pull
+docker compose up -d --build locallibrary</code></pre></div>
+
+<p>Migrations run automatically on container start, so there is no separate step for that.</p>
+
+<h2>Adding a fourth app</h2>
+<p>Four things, in order:</p>
+<ol>
+  <li><strong>docker-compose.yml</strong> &mdash; add a service stanza (copy the <code>final_project</code> block, change the name and build path)</li>
+  <li><strong>Caddyfile</strong> &mdash; add a <code>{$APP4_HOST}</code> block</li>
+  <li><strong>.env</strong> &mdash; add <code>APP4_HOST=app4.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span></code></li>
+  <li><strong>Create the database</strong> &mdash; the <code>init-databases.sql</code> file only runs on the very first Postgres start, so create it by hand:</li>
+</ol>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose exec postgres createdb -U cs347 app4</code></pre></div>
+<p>Then <code>docker compose up -d --build</code>.</p>
+
+<h2>Backups</h2>
+<p>Dump all your databases to a file:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose exec postgres pg_dumpall -U cs347 > ~/backup-$(date +%F).sql</code></pre></div>
+
+<p>The Postgres data volume survives <code>docker compose down</code>, reboots, and rebuilds. It does <strong>not</strong> survive <code>docker compose down -v</code> &mdash; that flag deletes all volumes, including your databases. Do not use it.</p>
+
+<h2>Troubleshooting</h2>
+<table>
+  <thead><tr><th>Problem</th><th>Likely cause</th></tr></thead>
+  <tbody>
+    <tr><td>CSRF errors on login</td><td>Missing <code>SECURE_PROXY_SSL_HEADER</code> in <code>settings.py</code></td></tr>
+    <tr><td>Infinite redirect loop</td><td><code>SECURE_SSL_REDIRECT = True</code> without <code>SECURE_PROXY_SSL_HEADER</code></td></tr>
+    <tr><td>TLS / certificate errors</td><td>DNS not resolving yet, or port 80 is blocked</td></tr>
+    <tr><td><code>Killed</code> during <code>docker compose build</code></td><td>The swap file is missing &mdash; check that the startup script ran</td></tr>
+    <tr><td>Browser refuses plain HTTP</td><td><code>.dev</code> domains are HSTS-preloaded; you must use <code>https://</code></td></tr>
+    <tr><td>New database not created after editing <code>init-databases.sql</code></td><td>That file only runs once; use <code>docker compose exec postgres createdb -U cs347 dbname</code></td></tr>
+  </tbody>
+</table>
+
+<h2>Tearing down</h2>
+<p>When the semester is over, the cleanest way to remove everything is to delete the entire project:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud projects delete <span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span></code></pre></div>
+<p>This removes the VM, disk, and static IP in one step.</p>
+
+</main>
+
+<script>
+const STORAGE_KEY = 'cs347-deploy-config';
+const fields = ['eid', 'domain', 'ip', 'billing', 'osuser'];
+
+function load() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch { return {}; }
+}
+
+function save(vals) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(vals)); } catch {}
+}
+
+function resolve(key, vals) {
+  const v = {
+    eid: vals.eid,
+    project: vals.eid ? 'cs347f26-' + vals.eid : null,
+    vm: vals.eid ? 'cs347-' + vals.eid : null,
+    domain: vals.domain,
+    ip: vals.ip,
+    billing: vals.billing,
+    osuser: vals.osuser,
+    'lib-host': vals.domain ? 'library.' + vals.domain : null,
+    'kahduke-host': vals.domain ? 'kahduke.' + vals.domain : null,
+    'fp-host': vals.domain ? 'finalproject.' + vals.domain : null,
+    'dot-domain': vals.domain ? '.' + vals.domain : null,
+    'csrf': vals.domain ? 'https://*.' + vals.domain : null,
+  };
+  return v[key] ?? null;
+}
+
+function update() {
+  const vals = load();
+  document.querySelectorAll('[data-v]').forEach(el => {
+    const key = el.getAttribute('data-v');
+    const val = resolve(key, vals);
+    if (val) {
+      el.textContent = val;
+      el.classList.add('filled');
+    } else {
+      el.textContent = el.getAttribute('data-d');
+      el.classList.remove('filled');
+    }
+  });
+}
+
+fields.forEach(f => {
+  const input = document.querySelector(`[data-field="${f}"]`);
+  if (!input) return;
+  const vals = load();
+  if (vals[f]) input.value = vals[f];
+  input.addEventListener('input', () => {
+    const vals = load();
+    const v = input.value.trim();
+    if (v) vals[f] = v; else delete vals[f];
+    save(vals);
+    update();
+  });
+});
+
+document.querySelectorAll('.copy-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const code = btn.closest('.code-block').querySelector('code');
+    try {
+      navigator.clipboard.writeText(code.textContent);
+      btn.textContent = 'Copied';
+      setTimeout(() => btn.textContent = 'Copy', 1500);
+    } catch {
+      const sel = getSelection();
+      const range = document.createRange();
+      range.selectNodeContents(code);
+      sel.removeAllRanges();
+      sel.addRange(range);
+    }
+  });
+});
+
+update();
+</script>
+
+</body>
+</html>
