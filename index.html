@@ -326,12 +326,8 @@ td code { font-size: 0.9em; }
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod daphne</code></pre></div>
 
 <h3>Update settings.py</h3>
-<p>In each app&rsquo;s <code>settings.py</code>, replace the <code>DATABASES</code> dict and add the environment helpers. Near the top of the file, after the existing imports:</p>
-<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>import environ
-
-env = environ.Env()
-
-DATABASES = {
+<p>In each app&rsquo;s <code>settings.py</code>, replace the <code>DATABASES</code> dict:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>DATABASES = {
     "default": env.db(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }</code></pre></div>
 
