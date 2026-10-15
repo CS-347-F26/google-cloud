@@ -20,7 +20,13 @@ COPY . .
 # Runs at build time, against the SQLite default — no database is reachable
 # here, and collectstatic does not need one. Needs STATIC_ROOT in settings.py
 # (see settings-snippet.py); WhiteNoise serves the result at runtime.
-RUN python manage.py collectstatic --noinput
+#
+# collectstatic loads settings.py, so every env("...") without a default must
+# have a value here. Compose's `environment:` and the server's .env only apply
+# when the container runs, not while the image builds, and the app's own .env
+# is gitignored. The placeholder is never connected to and does not persist
+# into the running container, where Compose supplies the real REDIS_URL.
+RUN REDIS_URL=redis://build-placeholder:6379 python manage.py collectstatic --noinput
 
 # migrate on start is safe to repeat and keeps deploys to one command. Each app
 # owns its own database, so there is no cross-app migration race.

@@ -290,7 +290,7 @@ td code { font-size: 0.9em; }
     </div>
     <div class="config-field">
       <label for="f-ip">Static IP</label>
-      <input id="f-ip" data-field="ip" placeholder="from step 2">
+      <input id="f-ip" data-field="ip" placeholder="from step 3">
     </div>
     <div class="config-field">
       <label for="f-billing">Billing Account ID</label>
@@ -298,7 +298,7 @@ td code { font-size: 0.9em; }
     </div>
     <div class="config-field">
       <label for="f-osuser">OS Login Username</label>
-      <input id="f-osuser" data-field="osuser" placeholder="from step 4">
+      <input id="f-osuser" data-field="osuser" placeholder="from step 5">
     </div>
   </div>
 </header>
@@ -309,7 +309,7 @@ td code { font-size: 0.9em; }
 <p class="lead">Your VM runs one Postgres database, one reverse proxy (Caddy), and up to five Django apps &mdash; each on its own subdomain with automatic HTTPS. You develop with SQLite on your laptop and deploy with <code>git push</code> + one command.</p>
 <p>For now, these instructions deploy <strong>locallibrary</strong> only. The server is already set up for kahduke and your final project; their steps will be added later.</p>
 
-<div class="note"><strong>Updated October 15:</strong> Static file setup was missing, so the Docker build failed at <code>collectstatic</code> and deployed sites had no CSS, and chat could not reach Redis on the server. If you already worked through step 1, go back and do three things: <a href="#update-whitenoise">add WhiteNoise as a dependency</a>, <a href="#update-static">add <code>STATIC_ROOT</code> and the WhiteNoise middleware</a> to <code>settings.py</code>, and update <code>CHANNEL_LAYERS</code> to read <code>REDIS_URL</code>, as now shown in <a href="https://w3.cs.jmu.edu/cs347/f26/activities/channels-tutorial/part-2/">Part 2 of the Channels tutorial</a>. Then commit, push, and rebuild (see <a href="#deploying-updates">Deploying updates</a>).</div>
+<div class="note"><strong>Updated October 15:</strong> Static file setup was missing, so the Docker build failed at <code>collectstatic</code> and deployed sites had no CSS, and chat could not reach Redis on the server. If you already worked through step 1, go back and do three things: <a href="#update-whitenoise">add WhiteNoise as a dependency</a>, <a href="#update-static">add <code>STATIC_ROOT</code> and the WhiteNoise middleware</a> to <code>settings.py</code>, and update <code>CHANNEL_LAYERS</code> to read <code>REDIS_URL</code>, as now shown in <a href="https://w3.cs.jmu.edu/cs347/f26/activities/channels-tutorial/part-2/">Part 2 of the Channels tutorial</a>. If you copied the Dockerfile before this update, <a href="#update-dockerfile">change its <code>collectstatic</code> line</a> too. Then commit, push, and rebuild (see <a href="#deploying-updates">Deploying updates</a>).</div>
 
 <h2>Prerequisites</h2>
 <ul>
@@ -361,7 +361,10 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])</code></pre>
 <p>With <code>DEBUG=False</code>, Django stops serving static files, so without WhiteNoise your deployed site loads with no CSS.</p>
 
 <h3>Add a Dockerfile</h3>
-<p>Copy <code><a href="Dockerfile.example" download>Dockerfile.example</a></code> into your locallibrary repo as <code>Dockerfile</code>. Then replace its <code>CMD</code> line with this one, which runs Daphne so Channels works:</p>
+<p id="update-dockerfile">Copy <code><a href="Dockerfile.example" download>Dockerfile.example</a></code> into your locallibrary repo as <code>Dockerfile</code>. If you copied it before October 15, make sure its <code>collectstatic</code> line now reads:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>RUN REDIS_URL=redis://build-placeholder:6379 python manage.py collectstatic --noinput</code></pre></div>
+<p>The build runs <code>collectstatic</code>, which loads <code>settings.py</code>, and your <code>.env</code> is not in the image. The placeholder only satisfies <code>env("REDIS_URL")</code> during the build; the running app gets the real address from Docker Compose.</p>
+<p>Then replace its <code>CMD</code> line with this one, which runs Daphne so Channels works:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>CMD ["sh", "-c", "python manage.py migrate --noinput &amp;&amp; exec daphne -b 0.0.0.0 -p 8000 locallibrary_config.asgi:application"]</code></pre></div>
 
 <h3>Commit and push</h3>
@@ -400,7 +403,7 @@ cd google-cloud
 <p>At your domain registrar, add <strong>one</strong> wildcard A record:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>*.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span>    A    <span data-v="ip" data-d="YOUR_STATIC_IP">YOUR_STATIC_IP</span></code></pre></div>
 
-<div class="note"><strong>Important:</strong> The IP address from step 2 should <strong>not</strong> start with <code>10.</code> &mdash; that is an internal IP. Use the external IP that the script printed.</div>
+<div class="note"><strong>Important:</strong> The IP address from step 3 should <strong>not</strong> start with <code>10.</code> &mdash; that is an internal IP. Use the external IP that the script printed.</div>
 
 <p>This single record covers every app you will ever add. Verify it resolves before continuing:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>dig +short library.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span></code></pre></div>
@@ -500,7 +503,7 @@ nano .env</code></pre></div>
   </tbody>
 </table>
 
-<p>Fill in <code>KAHDUKE_HOST</code> and <code>FINAL_PROJECT_HOST</code> now even though those apps are not deployed yet. Caddy reads all three hostnames, and leaving the placeholders in makes it try to get certificates for a domain you do not own.</p>
+<p>Fill in <code>KAHDUKE_HOST</code> and <code>FINAL_PROJECT_HOST</code> now even though those apps are not deployed yet. Caddy reads all three hostnames: leaving one blank or deleting it stops Caddy from starting at all, and leaving the placeholders in makes it try to get certificates for a domain you do not own. Each hostname must be different.</p>
 
 <p><strong>Do not</strong> set <code>DATABASE_URL</code> in <code>.env</code>. Leaving it unset is what makes SQLite work on your laptop.</p>
 
@@ -562,11 +565,17 @@ docker compose up -d --build locallibrary</code></pre></div>
   <thead><tr><th>Problem</th><th>Likely cause</th></tr></thead>
   <tbody>
     <tr><td>Browser says it cannot connect (no error page at all)</td><td>Caddy is not running. Run <code>docker compose ps -a</code>; if <code>caddy</code> is missing or exited, see <code>docker compose logs caddy</code> and re-run <code>docker compose up -d --build caddy locallibrary</code></td></tr>
+    <tr><td><code>caddy</code> shows <code>Restarting</code> in <code>docker compose ps</code></td><td>A bad value in <code>.env</code>. Run <code>docker compose logs --tail 5 caddy</code> and match the error:<br>
+      <code>server block without any key is global configuration</code> &rarr; a <code>*_HOST</code> variable is blank or missing<br>
+      <code>ambiguous site definition</code> &rarr; two <code>*_HOST</code> variables have the same value, or one contains a space<br>
+      <code>wrong argument count &hellip; after 'email'</code> &rarr; <code>ACME_EMAIL</code> is blank<br>
+      Fix <code>.env</code>, then run <code>docker compose up -d caddy</code></td></tr>
     <tr><td>502 Bad Gateway</td><td>Caddy is up but locallibrary is not. Check <code>docker compose logs locallibrary</code> for a crash or a failed migration</td></tr>
     <tr><td>&ldquo;Server Error (500)&rdquo;</td><td>A Python exception. Find the traceback with <code>docker compose logs locallibrary</code> (requires the <a href="#logging"><code>LOGGING</code> setting</a>)</td></tr>
     <tr><td>CSRF errors on login</td><td>Missing <code>SECURE_PROXY_SSL_HEADER</code> in <code>settings.py</code></td></tr>
     <tr><td>Infinite redirect loop</td><td><code>SECURE_SSL_REDIRECT = True</code> without <code>SECURE_PROXY_SSL_HEADER</code></td></tr>
     <tr><td>Build fails at <code>collectstatic</code></td><td>Missing <code>STATIC_ROOT</code> in <code>settings.py</code></td></tr>
+    <tr><td>Build fails with <code>Set the REDIS_URL environment variable</code></td><td>Your Dockerfile has the old <code>collectstatic</code> line; <a href="#update-dockerfile">update it</a></td></tr>
     <tr><td>Redis connection errors / chat does not work</td><td><code>CHANNEL_LAYERS</code> still says <code>127.0.0.1</code> instead of reading <code>REDIS_URL</code> (see <a href="https://w3.cs.jmu.edu/cs347/f26/activities/channels-tutorial/part-2/">Channels tutorial Part 2</a>)</td></tr>
     <tr><td>Site loads with no CSS</td><td>WhiteNoise not in <code>MIDDLEWARE</code></td></tr>
     <tr><td>TLS / certificate errors</td><td>DNS not resolving yet, or port 80 is blocked</td></tr>
