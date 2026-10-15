@@ -12,7 +12,7 @@ Caddyfile            one block per app; identical for every student
 init-databases.sql   one database per app
 env.example          copy to /srv/apps/.env — the only per-student file
 Dockerfile.example   copy into each app repo
-settings-snippet.py  the DATABASES block + the proxy header
+settings-snippet.py  the DATABASES block, proxy header, STATIC_ROOT + WhiteNoise
 ```
 
 Result: `https://library.yourdomain.dev`, `https://chat.yourdomain.dev`, … real certificates, no ports in
@@ -51,7 +51,8 @@ No `DATABASE_URL` in the environment means SQLite, so a laptop needs no configur
 clone just runs. Compose sets `DATABASE_URL` per service, so the deployed copy is Postgres. `.env`
 deliberately does **not** define `DATABASE_URL` — that absence is what makes the fallback work.
 
-`django-environ` is a regular dependency (students use it locally too). `psycopg[binary]` and `gunicorn`
+`django-environ` and `whitenoise` are regular dependencies (students use them locally too; `settings.py`
+names WhiteNoise's middleware, so it must import everywhere). `psycopg[binary]` and `gunicorn`
 live in a `prod` dependency group in `pyproject.toml`, so `uv sync` on a laptop never installs them. The Dockerfile runs
 `uv sync --locked --no-dev --group prod` to pull them in at build time.
 

@@ -92,6 +92,9 @@ a:hover { color: var(--accent-hover); }
 code a { color: inherit; text-decoration: underline; text-decoration-style: dotted; }
 code a:hover { color: var(--accent-hover); text-decoration-style: solid; }
 
+/* Anchor targets land below the sticky config bar, not under it */
+[id] { scroll-margin-top: 140px; }
+
 /* Config bar */
 .config-bar {
   position: sticky;
@@ -305,6 +308,8 @@ td code { font-size: 0.9em; }
 <h1>Deploying Your Django Apps to Google Cloud</h1>
 <p class="lead">Your VM runs one Postgres database, one reverse proxy (Caddy), and up to five Django apps &mdash; each on its own subdomain with automatic HTTPS. You develop with SQLite on your laptop and deploy with <code>git push</code> + one command.</p>
 
+<div class="note"><strong>Updated October 15:</strong> Static file setup was missing, so the Docker build failed at <code>collectstatic</code> and deployed sites had no CSS. If you already worked through step 1, go back and do two things: <a href="#update-whitenoise">add WhiteNoise as a dependency</a> and <a href="#update-static">add <code>STATIC_ROOT</code> and the WhiteNoise middleware</a> to <code>settings.py</code>. Then commit, push, and rebuild (see <a href="#deploying-updates">Deploying updates</a>).</div>
+
 <h2>Prerequisites</h2>
 <ul>
   <li>A Google Cloud account with access to a billing account</li>
@@ -325,6 +330,9 @@ td code { font-size: 0.9em; }
 <p>For <strong>locallibrary</strong> (which includes Channels for chat), also add Daphne:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod daphne</code></pre></div>
 
+<p id="update-whitenoise">Add WhiteNoise, which serves your CSS and JavaScript in production. It goes in the regular dependencies, not the <code>prod</code> group, because <code>settings.py</code> refers to it and has to load on your laptop too:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add whitenoise</code></pre></div>
+
 <h3>Update settings.py</h3>
 <p>In each app&rsquo;s <code>settings.py</code>, replace the <code>DATABASES</code> dict:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>DATABASES = {
@@ -340,6 +348,17 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])</code></pre>
 <p>Finally, add the proxy header so Django knows requests arrive over HTTPS:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>SECURE_PROXY_SSL_HEADER = ("HTTP_X_FORWARDED_PROTO", "https")</code></pre></div>
 <p>Without this line, you will get CSRF errors on login and redirect loops if <code>SECURE_SSL_REDIRECT</code> is on.</p>
+
+<p id="update-static">Set where <code>collectstatic</code> puts your static files. The Dockerfile runs it during the build, and without this setting the build fails:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>STATIC_ROOT = BASE_DIR / "staticfiles"</code></pre></div>
+
+<p>Then add WhiteNoise to <code>MIDDLEWARE</code>, directly after <code>SecurityMiddleware</code>:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>MIDDLEWARE = [
+    "django.middleware.security.SecurityMiddleware",
+    "whitenoise.middleware.WhiteNoiseMiddleware",
+    # ...the rest unchanged
+]</code></pre></div>
+<p>With <code>DEBUG=False</code>, Django stops serving static files, so without WhiteNoise your deployed site loads with no CSS.</p>
 
 <h3>Add a Dockerfile</h3>
 <p>Copy <code><a href="Dockerfile.example" download>Dockerfile.example</a></code> into each app&rsquo;s repo as <code>Dockerfile</code>. The only line you need to change is the last one &mdash; replace the module name with your app&rsquo;s WSGI or ASGI module.</p>
@@ -505,7 +524,7 @@ docker compose logs -f</code></pre></div>
   <li><code>https://<span data-v="kahduke-host" data-d="kahduke.yourdomain.dev">kahduke.yourdomain.dev</span></code></li>
 </ul>
 
-<h2>Deploying updates</h2>
+<h2 id="deploying-updates">Deploying updates</h2>
 <p>After pushing changes to your app&rsquo;s repo:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c
 cd /srv/apps
@@ -537,6 +556,8 @@ docker compose up -d --build locallibrary</code></pre></div>
   <tbody>
     <tr><td>CSRF errors on login</td><td>Missing <code>SECURE_PROXY_SSL_HEADER</code> in <code>settings.py</code></td></tr>
     <tr><td>Infinite redirect loop</td><td><code>SECURE_SSL_REDIRECT = True</code> without <code>SECURE_PROXY_SSL_HEADER</code></td></tr>
+    <tr><td>Build fails at <code>collectstatic</code></td><td>Missing <code>STATIC_ROOT</code> in <code>settings.py</code></td></tr>
+    <tr><td>Site loads with no CSS</td><td>WhiteNoise not in <code>MIDDLEWARE</code></td></tr>
     <tr><td>TLS / certificate errors</td><td>DNS not resolving yet, or port 80 is blocked</td></tr>
     <tr><td><code>Killed</code> during <code>docker compose build</code></td><td>The swap file is missing &mdash; check that the startup script ran</td></tr>
     <tr><td>Browser refuses plain HTTP</td><td><code>.dev</code> domains are HSTS-preloaded; you must use <code>https://</code></td></tr>
