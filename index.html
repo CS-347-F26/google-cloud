@@ -307,6 +307,7 @@ td code { font-size: 0.9em; }
 
 <h1>Deploying Your Django Apps to Google Cloud</h1>
 <p class="lead">Your VM runs one Postgres database, one reverse proxy (Caddy), and up to five Django apps &mdash; each on its own subdomain with automatic HTTPS. You develop with SQLite on your laptop and deploy with <code>git push</code> + one command.</p>
+<p>For now, these instructions deploy <strong>locallibrary</strong> only. The server is already set up for kahduke and your final project; their steps will be added later.</p>
 
 <div class="note"><strong>Updated October 15:</strong> Static file setup was missing, so the Docker build failed at <code>collectstatic</code> and deployed sites had no CSS. If you already worked through step 1, go back and do two things: <a href="#update-whitenoise">add WhiteNoise as a dependency</a> and <a href="#update-static">add <code>STATIC_ROOT</code> and the WhiteNoise middleware</a> to <code>settings.py</code>. Then commit, push, and rebuild (see <a href="#deploying-updates">Deploying updates</a>).</div>
 
@@ -315,26 +316,26 @@ td code { font-size: 0.9em; }
   <li>A Google Cloud account with access to a billing account</li>
   <li>The <a href="https://cloud.google.com/sdk/docs/install" target="_blank" rel="noopener"><code>gcloud</code> CLI</a> installed</li>
   <li>A domain name (as created earlier in the semester for free via the GitHub Student Developer Pack)</li>
-  <li>Your Django app(s) pushed to a Git repo you can clone on the VM</li>
+  <li>Your locallibrary app pushed to a Git repo you can clone on the VM</li>
 </ul>
 
 <div class="note"><strong>Before you begin:</strong> Enter your <strong>JMU eID</strong> and <strong>domain name</strong> in the fields at the top of this page. The commands throughout will update with your values so you can copy and paste them directly.</div>
 
-<h2>1. Prepare your apps for deployment</h2>
-<p>Do this on your laptop, in each app&rsquo;s repo, <strong>before</strong> touching Google Cloud.</p>
+<h2>1. Prepare locallibrary for deployment</h2>
+<p>Do this on your laptop, in your locallibrary repo, <strong>before</strong> touching Google Cloud.</p>
 
 <h3>Add production dependencies</h3>
 <p>Production needs a Postgres driver and a WSGI server that your laptop doesn&rsquo;t. Put them in a <code>prod</code> dependency group so they only install inside the Docker image:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod "psycopg[binary]" gunicorn</code></pre></div>
 
-<p>For <strong>locallibrary</strong> (which includes Channels for chat), also add Daphne:</p>
+<p>locallibrary includes Channels for chat, so it also needs Daphne, an ASGI server:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod daphne</code></pre></div>
 
 <p id="update-whitenoise">Add WhiteNoise, which serves your CSS and JavaScript in production. It goes in the regular dependencies, not the <code>prod</code> group, because <code>settings.py</code> refers to it and has to load on your laptop too:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add whitenoise</code></pre></div>
 
 <h3>Update settings.py</h3>
-<p>In each app&rsquo;s <code>settings.py</code>, replace the <code>DATABASES</code> dict:</p>
+<p>In <code>settings.py</code>, replace the <code>DATABASES</code> dict:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>DATABASES = {
     "default": env.db(default=f"sqlite:///{BASE_DIR / 'db.sqlite3'}")
 }</code></pre></div>
@@ -361,13 +362,8 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])</code></pre>
 <p>With <code>DEBUG=False</code>, Django stops serving static files, so without WhiteNoise your deployed site loads with no CSS.</p>
 
 <h3>Add a Dockerfile</h3>
-<p>Copy <code><a href="Dockerfile.example" download>Dockerfile.example</a></code> into each app&rsquo;s repo as <code>Dockerfile</code>. The only line you need to change is the last one &mdash; replace the module name with your app&rsquo;s WSGI or ASGI module.</p>
-
-<p>For <strong>locallibrary</strong> (which uses Daphne for Channels):</p>
+<p>Copy <code><a href="Dockerfile.example" download>Dockerfile.example</a></code> into your locallibrary repo as <code>Dockerfile</code>. Then replace its <code>CMD</code> line with this one, which runs Daphne so Channels works:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>CMD ["sh", "-c", "python manage.py migrate --noinput &amp;&amp; exec daphne -b 0.0.0.0 -p 8000 locallibrary_config.asgi:application"]</code></pre></div>
-
-<p>For <strong>kahduke</strong> and other apps without Channels:</p>
-<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>CMD ["sh", "-c", "python manage.py migrate --noinput &amp;&amp; exec gunicorn --bind 0.0.0.0:8000 --workers 1 --threads 4 YOUR_APP.wsgi"]</code></pre></div>
 
 <h3>Commit and push</h3>
 <p>Make sure everything still works locally (<code>uv run python manage.py runserver</code>), then commit and push:</p>
@@ -375,7 +371,7 @@ CSRF_TRUSTED_ORIGINS = env.list("CSRF_TRUSTED_ORIGINS", default=[])</code></pre>
 git commit -m "Add production config for Google Cloud deployment"
 git push</code></pre></div>
 
-<p>Repeat for each app. From here on, everything happens in Google Cloud.</p>
+<p>From here on, everything happens in Google Cloud.</p>
 
 <h2>2. Create your Google Cloud project</h2>
 <p>Authenticate and create a project. Use <code><span data-v="project" data-d="cs347f26-YOUR_EID">cs347f26-YOUR_EID</span></code> as the project ID:</p>
@@ -461,7 +457,7 @@ CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
 
 <p>FYI: The key at <code>~/.ssh/google_compute_engine</code> was created by your first <code>gcloud compute ssh</code>.</p>
 
-<h2>6. Clone the deployment files and your apps</h2>
+<h2>6. Clone the deployment files and locallibrary</h2>
 <p>Copy the deployment files (<code><a href="Dockerfile.example" download>Dockerfile.example</a></code>, <code><a href="docker-compose.yml" download>docker-compose.yml</a></code>, <code><a href="Caddyfile" download>Caddyfile</a></code>, <code><a href="init-databases.sql" download>init-databases.sql</a></code>,
 <code><a href="env.example" download>env.example</a></code>) into <code>/srv/apps/</code>. By running the following form your laptop:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>scp Dockerfile.example docker-compose.yml Caddyfile init-databases.sql env.example <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>:/srv/apps</code></pre></div>
@@ -471,9 +467,8 @@ CONTAINER ID   IMAGE     COMMAND   CREATED   STATUS    PORTS     NAMES
   <pre><code>ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span>
 cd /srv/apps</code></pre></div>
 
-<p>Then clone your Django apps beside them:</p>
-<div class="code-block"><button class="copy-btn">Copy</button><pre><code>git clone YOUR_LOCALLIBRARY_REPO locallibrary
-git clone YOUR_KAHDUKE_REPO kahduke</code></pre></div>
+<p>Then clone locallibrary beside them:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>git clone YOUR_LOCALLIBRARY_REPO locallibrary</code></pre></div>
 
 <p>Your <code>/srv/apps/</code> directory should look like this:</p>
 <div class="tree">
@@ -484,7 +479,6 @@ git clone YOUR_KAHDUKE_REPO kahduke</code></pre></div>
 &nbsp;&nbsp;<a href="docker-compose.yml" download>docker-compose.yml</a><br>
 &nbsp;&nbsp;<a href="env.example" download>env.example</a><br>
 &nbsp;&nbsp;<a href="init-databases.sql" download>init-databases.sql</a><br>
-&nbsp;&nbsp;kahduke/ <span class="muted">&larr; your app repo</span><br>
 &nbsp;&nbsp;locallibrary/ <span class="muted">&larr; your app repo</span><br>
 </div>
 
@@ -507,42 +501,29 @@ nano .env</code></pre></div>
   </tbody>
 </table>
 
+<p>Fill in <code>KAHDUKE_HOST</code> and <code>FINAL_PROJECT_HOST</code> now even though those apps are not deployed yet. Caddy reads all three hostnames, and leaving the placeholders in makes it try to get certificates for a domain you do not own.</p>
+
 <p><strong>Do not</strong> set <code>DATABASE_URL</code> in <code>.env</code>. Leaving it unset is what makes SQLite work on your laptop.</p>
 
-<h2>8. Start everything</h2>
-<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose up -d --build</code></pre></div>
+<h2>8. Start locallibrary</h2>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose up -d --build caddy locallibrary</code></pre></div>
 
-<p>This builds your app images, starts Postgres, runs your migrations, and starts Caddy. On first launch it takes a few minutes because it is downloading base images and building from scratch.</p>
+<p>This builds the locallibrary image, starts Postgres and Redis, runs your migrations, and starts Caddy. Name the two services as shown: a bare <code>docker compose up</code> would also try to build kahduke and final_project, which you have not cloned, and fail. On first launch it takes a few minutes because it is downloading base images and building from scratch.</p>
 
 <p>Check that everything is running:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose ps
 docker compose logs -f</code></pre></div>
 
-<p>Once Caddy has obtained certificates (you will see log lines about it), visit your apps:</p>
-<ul>
-  <li><code>https://<span data-v="lib-host" data-d="library.yourdomain.dev">library.yourdomain.dev</span></code></li>
-  <li><code>https://<span data-v="kahduke-host" data-d="kahduke.yourdomain.dev">kahduke.yourdomain.dev</span></code></li>
-</ul>
+<p>Once Caddy has obtained a certificate (you will see log lines about it), visit your app at <code>https://<span data-v="lib-host" data-d="library.yourdomain.dev">library.yourdomain.dev</span></code>.</p>
 
 <h2 id="deploying-updates">Deploying updates</h2>
-<p>After pushing changes to your app&rsquo;s repo:</p>
+<p>After pushing changes to your locallibrary repo:</p>
 <div class="code-block"><button class="copy-btn">Copy</button><pre><code>gcloud compute ssh <span data-v="vm" data-d="cs347-YOUR_EID">cs347-YOUR_EID</span> --zone us-central1-c
 cd /srv/apps
 git -C locallibrary pull
 docker compose up -d --build locallibrary</code></pre></div>
 
 <p>Migrations run automatically on container start, so there is no separate step for that.</p>
-
-<h2>Adding a fourth app</h2>
-<p>Four things, in order:</p>
-<ol>
-  <li><strong><a href="docker-compose.yml">docker-compose.yml</a></strong> &mdash; add a service stanza (copy the <code>final_project</code> block, change the name and build path)</li>
-  <li><strong><a href="Caddyfile">Caddyfile</a></strong> &mdash; add a <code>{$APP4_HOST}</code> block</li>
-  <li><strong>.env</strong> &mdash; add <code>APP4_HOST=app4.<span data-v="domain" data-d="yourdomain.dev">yourdomain.dev</span></code></li>
-  <li><strong>Create the database</strong> &mdash; the <code><a href="init-databases.sql">init-databases.sql</a></code> file only runs on the very first Postgres start, so create it by hand:</li>
-</ol>
-<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose exec postgres createdb -U cs347 app4</code></pre></div>
-<p>Then <code>docker compose up -d --build</code>.</p>
 
 <h2>Backups</h2>
 <p>Dump all your databases to a file:</p>
