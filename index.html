@@ -309,7 +309,7 @@ td code { font-size: 0.9em; }
 <p class="lead">Your VM runs one Postgres database, one reverse proxy (Caddy), and up to five Django apps &mdash; each on its own subdomain with automatic HTTPS. You develop with SQLite on your laptop and deploy with <code>git push</code> + one command.</p>
 <p>For now, these instructions deploy <strong>locallibrary</strong> only. The server is already set up for kahduke and your final project; their steps will be added later.</p>
 
-<div class="note"><strong>Updated October 15:</strong> Static file setup was missing, so the Docker build failed at <code>collectstatic</code> and deployed sites had no CSS. If you already worked through step 1, go back and do two things: <a href="#update-whitenoise">add WhiteNoise as a dependency</a> and <a href="#update-static">add <code>STATIC_ROOT</code> and the WhiteNoise middleware</a> to <code>settings.py</code>. Then commit, push, and rebuild (see <a href="#deploying-updates">Deploying updates</a>).</div>
+<div class="note"><strong>Updated October 15:</strong> Static file setup was missing, so the Docker build failed at <code>collectstatic</code> and deployed sites had no CSS, and chat could not reach Redis on the server. If you already worked through step 1, go back and do three things: <a href="#update-whitenoise">add WhiteNoise as a dependency</a>, <a href="#update-static">add <code>STATIC_ROOT</code> and the WhiteNoise middleware</a> to <code>settings.py</code>, and update <code>CHANNEL_LAYERS</code> to read <code>REDIS_URL</code>, as now shown in <a href="https://w3.cs.jmu.edu/cs347/f26/activities/channels-tutorial/part-2/">Part 2 of the Channels tutorial</a>. Then commit, push, and rebuild (see <a href="#deploying-updates">Deploying updates</a>).</div>
 
 <h2>Prerequisites</h2>
 <ul>
@@ -328,8 +328,7 @@ td code { font-size: 0.9em; }
 <p>Production needs a Postgres driver and a WSGI server that your laptop doesn&rsquo;t. Put them in a <code>prod</code> dependency group so they only install inside the Docker image:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod "psycopg[binary]" gunicorn</code></pre></div>
 
-<p>locallibrary includes Channels for chat, so it also needs Daphne, an ASGI server:</p>
-<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add --group prod daphne</code></pre></div>
+<p>You do not need to add Daphne or <code>channels-redis</code> here: the Channels tutorial already added both as regular dependencies.</p>
 
 <p id="update-whitenoise">Add WhiteNoise, which serves your CSS and JavaScript in production. It goes in the regular dependencies, not the <code>prod</code> group, because <code>settings.py</code> refers to it and has to load on your laptop too:</p>
 <div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>uv add whitenoise</code></pre></div>
@@ -532,12 +531,43 @@ docker compose up -d --build locallibrary</code></pre></div>
 <p>The Postgres data volume survives <code>docker compose down</code>, reboots, and rebuilds. It does <strong>not</strong> survive <code>docker compose down -v</code> &mdash; that flag deletes all volumes, including your databases. Do not use it.</p>
 
 <h2>Troubleshooting</h2>
+
+<h3 id="logs">Reading the logs</h3>
+<p>Most problems show up in a container&rsquo;s logs. SSH to your VM and run these from <code>/srv/apps</code>.</p>
+
+<p>First, check which containers are running. A container showing <code>Exited</code> or <code>Restarting</code> has crashed, and its logs say why:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose ps -a</code></pre></div>
+
+<p><strong>Caddy</strong> logs certificate problems (DNS, Let&rsquo;s Encrypt) and failures to reach your app:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose logs --tail 50 caddy</code></pre></div>
+
+<p><strong>Django</strong> (the locallibrary container) logs migration errors at startup, each request, and Python tracebacks:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose logs --tail 100 locallibrary</code></pre></div>
+
+<p>To watch logs live while you reload the page in your browser, add <code>-f</code> and press <kbd>Ctrl</kbd>+<kbd>C</kbd> to stop:</p>
+<div class="code-block"><button class="copy-btn">Copy</button><pre><code>docker compose logs -f caddy locallibrary</code></pre></div>
+
+<p>Build errors (for example, a failing <code>collectstatic</code>) are not in the logs. They print in the output of the <code>docker compose up -d --build</code> command itself, so scroll up in that output.</p>
+
+<p id="logging">With <code>DEBUG=False</code>, Django does <strong>not</strong> print tracebacks by default: a page shows &ldquo;Server Error (500)&rdquo; and the log shows only the request. Add this to the bottom of <code>settings.py</code> so errors appear in <code>docker compose logs</code>, then commit, push, and rebuild:</p>
+<div class="code-block"><button class="copy-btn" type="button">Copy</button><pre><code>LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}</code></pre></div>
+
+<h3>Common problems</h3>
 <table>
   <thead><tr><th>Problem</th><th>Likely cause</th></tr></thead>
   <tbody>
+    <tr><td>Browser says it cannot connect (no error page at all)</td><td>Caddy is not running. Run <code>docker compose ps -a</code>; if <code>caddy</code> is missing or exited, see <code>docker compose logs caddy</code> and re-run <code>docker compose up -d --build caddy locallibrary</code></td></tr>
+    <tr><td>502 Bad Gateway</td><td>Caddy is up but locallibrary is not. Check <code>docker compose logs locallibrary</code> for a crash or a failed migration</td></tr>
+    <tr><td>&ldquo;Server Error (500)&rdquo;</td><td>A Python exception. Find the traceback with <code>docker compose logs locallibrary</code> (requires the <a href="#logging"><code>LOGGING</code> setting</a>)</td></tr>
     <tr><td>CSRF errors on login</td><td>Missing <code>SECURE_PROXY_SSL_HEADER</code> in <code>settings.py</code></td></tr>
     <tr><td>Infinite redirect loop</td><td><code>SECURE_SSL_REDIRECT = True</code> without <code>SECURE_PROXY_SSL_HEADER</code></td></tr>
     <tr><td>Build fails at <code>collectstatic</code></td><td>Missing <code>STATIC_ROOT</code> in <code>settings.py</code></td></tr>
+    <tr><td>Redis connection errors / chat does not work</td><td><code>CHANNEL_LAYERS</code> still says <code>127.0.0.1</code> instead of reading <code>REDIS_URL</code> (see <a href="https://w3.cs.jmu.edu/cs347/f26/activities/channels-tutorial/part-2/">Channels tutorial Part 2</a>)</td></tr>
     <tr><td>Site loads with no CSS</td><td>WhiteNoise not in <code>MIDDLEWARE</code></td></tr>
     <tr><td>TLS / certificate errors</td><td>DNS not resolving yet, or port 80 is blocked</td></tr>
     <tr><td><code>Killed</code> during <code>docker compose build</code></td><td>The swap file is missing &mdash; check that the startup script ran</td></tr>

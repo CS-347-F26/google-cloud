@@ -42,3 +42,12 @@ STATIC_ROOT = BASE_DIR / "staticfiles"
 #       "whitenoise.middleware.WhiteNoiseMiddleware",
 #       ...
 #   ]
+
+# With DEBUG=False, Django sends 500 tracebacks only to mail_admins, so
+# `docker compose logs` shows the request and no error. This prints them.
+LOGGING = {
+    "version": 1,
+    "disable_existing_loggers": False,
+    "handlers": {"console": {"class": "logging.StreamHandler"}},
+    "root": {"handlers": ["console"], "level": "WARNING"},
+}
